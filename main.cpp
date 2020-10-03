@@ -14,6 +14,8 @@
 using namespace std::string_literals;
 using SampleIndex = int;
 
+const int maxChannels = 32;
+
 // thanks https://stackoverflow.com/a/16421677/131264
 template <typename Iter, typename RandomGenerator>
 Iter select_randomly(Iter start, Iter end, RandomGenerator& g)
@@ -24,7 +26,8 @@ Iter select_randomly(Iter start, Iter end, RandomGenerator& g)
 }
 
 // thanks https://stackoverflow.com/a/16421677/131264
-template <typename Iter> Iter select_randomly(Iter start, Iter end)
+template <typename Iter>
+Iter select_randomly(Iter start, Iter end)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -80,7 +83,7 @@ std::vector<Mix_Chunk*> InitAndLoad(std::vector<SampleIndex>& kicks,
         exit(-1);
     }
 
-    result = Mix_AllocateChannels(32);
+    result = Mix_AllocateChannels(maxChannels);
     if (result < 0) {
         fprintf(stderr, "Unable to allocate mixing channels: %s\n", SDL_GetError());
         exit(-1);
@@ -90,17 +93,19 @@ std::vector<Mix_Chunk*> InitAndLoad(std::vector<SampleIndex>& kicks,
     std::vector<Mix_Chunk*> samples;
 
     // Find and load all wav files
-    auto allWavFiles = findFiles(".", ".wav");
+    std::cout << "Loading ";
     auto sampleIndex = 0;
-    for (auto filename : allWavFiles) {
+    for (auto filename : findFiles(".", ".wav")) {
         if (contains(filename, "bpm"s) || contains(filename, "loop"s)) {
             // Skip samples that are loops or drum loops
             continue;
         }
-        std::cout << "Loading " << filename << std::endl;
+        //std::cout << "Loading " << filename << std::endl;
+
+        std::cout << ".";
         auto sample = Mix_LoadWAV(filename.c_str());
         if (sample == nullptr) {
-            fprintf(stderr, "Could not load %s\n", filename.c_str());
+            fprintf(stderr, "\nCould not load %s\n", filename.c_str());
             continue;
         }
 
@@ -133,6 +138,7 @@ std::vector<Mix_Chunk*> InitAndLoad(std::vector<SampleIndex>& kicks,
             sampleIndex++;
         }
     }
+    std::cout << std::endl;
 
     if (kicks.size() == 0) {
         std::cerr << "Found no kicks!" << std::endl;
@@ -232,6 +238,9 @@ int main(int argc, char** argv)
 
         bool gotEvent = SDL_PollEvent(&Event);
 
+        const auto delay = 100000;
+        int volume = 128;
+
         while (!done && gotEvent) {
             switch (Event.type) {
             case SDL_KEYDOWN:
@@ -239,7 +248,26 @@ int main(int argc, char** argv)
                 case 'a':
                     Mix_PlayChannel(-1, samples[currentKick], 0);
                     break;
+                case 'p':
+                    volume = 128;
+                    // TODO: Check if using Mix_GroupAvailable(-1) makes it possible to pick 7 unused channels
+                    //i2 = Mix_GroupAvailable(-1);
+                    for (auto i = (maxChannels-8); i < maxChannels; ++i) {
+                        Mix_Volume(i, volume);
+                        Mix_PlayChannel(i, samples[currentKick], 0);
+                        usleep(delay);
+                        volume /= 2;
+                    }
+                    for (auto i = (maxChannels-8); i < maxChannels; ++i) {
+                        Mix_FadeOutChannel(i, 200);
+                    }
+                    usleep(2000);
+                    for (auto i = (maxChannels-8); i < maxChannels; ++i) {
+                        Mix_Volume(i, 128);
+                    }
+                    break;
                 case 'w':
+                case 'r':
                     Mix_PlayChannel(-1, samples[currentSnare], 0);
                     break;
                 case 'd':
