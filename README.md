@@ -6,10 +6,21 @@ Play drums with the `qweasd` keys, randomze the kit with `f` and stop the sound 
 
 ![keybindings](img/keybindings.png)
 
-## General info
+## Requirements
 
 * Uses SDL2.
-* Tested on Arch Linux.
+* Download and extract [the drum samples](http://cdn.mos.musicradar.com/audio/samples/musicradar-drum-samples.zip), either manually or by using `make run`.
+
+## Building
+
 * Build with `make` or with [`cxx`](https://github.com/xyproto/cxx).
-* Version: 1.0.0.
+
+## Testing
+
+* Tested on Arch Linux.
+
+## General info
+
+* Version: 1.0.0
+* Author: Alexander F. Rødseth &lt;rodseth@gmail.com&gt;
 * License: MIT
