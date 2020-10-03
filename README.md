@@ -2,9 +2,11 @@
 
 Play drums with the `qweasd` keys, randomze the kit with `f` and stop the sound with `space`.
 
-Keybindings:
+## Screenshot
 
 ![keybindings](img/keybindings.png)
+
+## General info
 
 * Uses SDL2.
 * Tested on Arch Linux.
