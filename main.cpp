@@ -26,8 +26,7 @@ Iter select_randomly(Iter start, Iter end, RandomGenerator& g)
 }
 
 // thanks https://stackoverflow.com/a/16421677/131264
-template <typename Iter>
-Iter select_randomly(Iter start, Iter end)
+template <typename Iter> Iter select_randomly(Iter start, Iter end)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -100,7 +99,7 @@ std::vector<Mix_Chunk*> InitAndLoad(std::vector<SampleIndex>& kicks,
             // Skip samples that are loops or drum loops
             continue;
         }
-        //std::cout << "Loading " << filename << std::endl;
+        // std::cout << "Loading " << filename << std::endl;
 
         std::cout << ".";
         auto sample = Mix_LoadWAV(filename.c_str());
@@ -241,6 +240,10 @@ int main(int argc, char** argv)
         const auto delay = 100000;
         int volume = 128;
 
+        std::vector<int> usedChannels;
+        int freeChannel = -1;
+        int i;
+
         while (!done && gotEvent) {
             switch (Event.type) {
             case SDL_KEYDOWN:
@@ -249,40 +252,48 @@ int main(int argc, char** argv)
                     Mix_PlayChannel(-1, samples[currentKick], 0);
                     break;
                 case 'p':
-                    // The right way to do this is to modify the sample once,
-                    // I believe.
+                    // TODO: Don't play the sample repeatedly,
+                    //       rather prepare the sample in advance.
                     volume = 128;
-                    // TODO: Check if using Mix_GroupAvailable(-1) makes it possible to pick 7 unused channels
-                    //i2 = Mix_GroupAvailable(-1);
-                    for (auto i = (maxChannels-8); i < maxChannels; ++i) {
-                        Mix_Volume(i, volume);
-                        Mix_PlayChannel(i, samples[currentKick], 0);
+                    for (i = (maxChannels - 8); i < maxChannels; ++i) {
+                        freeChannel = Mix_GroupAvailable(-1);
+                        Mix_Volume(freeChannel, volume);
+                        Mix_PlayChannel(freeChannel, samples[currentKick], 0);
                         usleep(delay);
                         volume /= 2;
+                        usedChannels.push_back(freeChannel);
                     }
-                    for (auto i = (maxChannels-8); i < maxChannels; ++i) {
-                        Mix_FadeOutChannel(i, 200);
-                    }
-                    usleep(2000);
-                    for (auto i = (maxChannels-8); i < maxChannels; ++i) {
-                        Mix_Volume(i, 128);
-                    }
+                    // for (auto i : usedChannels) {
+                    //    Mix_FadeOutChannel(i, 200);
+                    //}
+                    usedChannels.clear();
+                    // usedChannels = nullptr;
                     break;
                 case 'w':
                 case 'r':
-                    Mix_PlayChannel(-1, samples[currentSnare], 0);
+                    i = Mix_GroupAvailable(-1);
+                    Mix_Volume(i, 128);
+                    Mix_PlayChannel(i, samples[currentSnare], 0);
                     break;
                 case 'd':
-                    Mix_PlayChannel(-1, samples[currentCrash], 0);
+                    i = Mix_GroupAvailable(-1);
+                    Mix_Volume(i, 128);
+                    Mix_PlayChannel(i, samples[currentCrash], 0);
                     break;
                 case 's':
-                    Mix_PlayChannel(-1, samples[currentHiHat], 0);
+                    i = Mix_GroupAvailable(-1);
+                    Mix_Volume(i, 128);
+                    Mix_PlayChannel(i, samples[currentHiHat], 0);
                     break;
                 case 'q':
-                    Mix_PlayChannel(-1, samples[currentTom], 0);
+                    i = Mix_GroupAvailable(-1);
+                    Mix_Volume(i, 128);
+                    Mix_PlayChannel(i, samples[currentTom], 0);
                     break;
                 case 'e':
-                    Mix_PlayChannel(-1, samples[currentRide], 0);
+                    i = Mix_GroupAvailable(-1);
+                    Mix_Volume(i, 128);
+                    Mix_PlayChannel(i, samples[currentRide], 0);
                     break;
                 case 'f':
                     currentKick = *select_randomly(kicks.begin(), kicks.end());
