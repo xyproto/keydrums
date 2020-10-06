@@ -249,6 +249,8 @@ int main(int argc, char** argv)
                     Mix_PlayChannel(-1, samples[currentKick], 0);
                     break;
                 case 'p':
+                    // The right way to do this is to modify the sample once,
+                    // I believe.
                     volume = 128;
                     // TODO: Check if using Mix_GroupAvailable(-1) makes it possible to pick 7 unused channels
                     //i2 = Mix_GroupAvailable(-1);
