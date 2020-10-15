@@ -248,17 +248,16 @@ int main(int argc, char** argv)
             switch (Event.type) {
             case SDL_KEYDOWN:
                 switch (Event.key.keysym.sym) {
-                case 'a':
+                case 'a': // kick
                     Mix_PlayChannel(-1, samples[currentKick], 0);
                     break;
-                case 'p':
-                    // TODO: Don't play the sample repeatedly,
-                    //       rather prepare the sample in advance.
+                case 'm': // special snare that is cool but causes problems when played many times
+                    // TODO: Don't play the sample repeatedly, rather prepare the sample in advance.
                     volume = 128;
                     for (i = (maxChannels - 8); i < maxChannels; ++i) {
                         freeChannel = Mix_GroupAvailable(-1);
                         Mix_Volume(freeChannel, volume);
-                        Mix_PlayChannel(freeChannel, samples[currentKick], 0);
+                        Mix_PlayChannel(freeChannel, samples[currentSnare], 0);
                         usleep(delay);
                         volume /= 2;
                         usedChannels.push_back(freeChannel);
@@ -269,28 +268,28 @@ int main(int argc, char** argv)
                     usedChannels.clear();
                     // usedChannels = nullptr;
                     break;
-                case 'w':
-                case 'r':
+                case 'o': // snare
+                case 'k': // snare
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentSnare], 0);
                     break;
-                case 'd':
+                case 'p': // crash
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentCrash], 0);
                     break;
-                case 's':
+                case 'e': // hi-hat
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentHiHat], 0);
                     break;
-                case 'q':
+                case 'q': // tom
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentTom], 0);
                     break;
-                case 'e':
+                case 'w': // ride
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentRide], 0);
