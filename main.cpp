@@ -251,13 +251,14 @@ int main(int argc, char** argv)
                 case 'a': // kick
                     Mix_PlayChannel(-1, samples[currentKick], 0);
                     break;
-                case 'm': // special snare that is cool but causes problems when played many times
-                    // TODO: Don't play the sample repeatedly, rather prepare the sample in advance.
+                case 'p':
+                    // TODO: Don't play the sample repeatedly,
+                    //       rather prepare the sample in advance.
                     volume = 128;
                     for (i = (maxChannels - 8); i < maxChannels; ++i) {
                         freeChannel = Mix_GroupAvailable(-1);
                         Mix_Volume(freeChannel, volume);
-                        Mix_PlayChannel(freeChannel, samples[currentSnare], 0);
+                        Mix_PlayChannel(freeChannel, samples[currentKick], 0);
                         usleep(delay);
                         volume /= 2;
                         usedChannels.push_back(freeChannel);
@@ -268,18 +269,18 @@ int main(int argc, char** argv)
                     usedChannels.clear();
                     // usedChannels = nullptr;
                     break;
-                case 'o': // snare
-                case 'k': // snare
+                case 'w': // snare
+                case 'r': // snare
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentSnare], 0);
                     break;
-                case 'p': // crash
+                case 'd': // crash
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentCrash], 0);
                     break;
-                case 'e': // hi-hat
+                case 's': // hi-hat
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentHiHat], 0);
@@ -289,12 +290,12 @@ int main(int argc, char** argv)
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentTom], 0);
                     break;
-                case 'w': // ride
+                case 'e': // ride
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentRide], 0);
                     break;
-                case 'f':
+                case 'f': // randomize samples
                     currentKick = *select_randomly(kicks.begin(), kicks.end());
                     currentSnare = *select_randomly(snares.begin(), snares.end());
                     currentHiHat = *select_randomly(hihats.begin(), hihats.end());
@@ -302,10 +303,10 @@ int main(int argc, char** argv)
                     currentTom = *select_randomly(toms.begin(), toms.end());
                     currentRide = *select_randomly(rides.begin(), rides.end());
                     break;
-                case SDLK_ESCAPE:
+                case SDLK_ESCAPE: // quit
                     done = true;
                     break;
-                case SDLK_SPACE:
+                case SDLK_SPACE: // quickly fade out all channels
                     Mix_FadeOutChannel(-1, 200);
                     break;
                 default:
