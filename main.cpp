@@ -251,14 +251,14 @@ int main(int argc, char** argv)
                 case 'a': // kick
                     Mix_PlayChannel(-1, samples[currentKick], 0);
                     break;
-                case 'p':
+                case 'p': // special snare
                     // TODO: Don't play the sample repeatedly,
                     //       rather prepare the sample in advance.
                     volume = 128;
-                    for (i = (maxChannels - 8); i < maxChannels; ++i) {
+                    for (i = (maxChannels - 4); i < maxChannels; ++i) {
                         freeChannel = Mix_GroupAvailable(-1);
                         Mix_Volume(freeChannel, volume);
-                        Mix_PlayChannel(freeChannel, samples[currentKick], 0);
+                        Mix_PlayChannel(freeChannel, samples[currentSnare], 0);
                         usleep(delay);
                         volume /= 2;
                         usedChannels.push_back(freeChannel);
