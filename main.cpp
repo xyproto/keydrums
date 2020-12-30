@@ -1,7 +1,6 @@
-
-#include "SDL2/SDL.h"
-#include "SDL2/SDL_image.h"
-#include "SDL2/SDL_mixer.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
 
 #include <filesystem>
 #include <iostream>
@@ -12,6 +11,7 @@
 #include <vector>
 
 using namespace std::string_literals;
+
 using SampleIndex = int;
 
 const int maxChannels = 32;
@@ -63,18 +63,28 @@ inline const std::vector<std::string> findFiles(std::string const& path, std::st
     std::vector<std::string> collected;
     for (auto& p : std::filesystem::recursive_directory_iterator(path)) {
         if (hasSuffix(p.path(), ext)) {
+
             collected.push_back(p.path());
         }
     }
     return collected;
 }
 
+static SampleIndex defaultKick = 0;
+static SampleIndex defaultSnare = 0;
+static SampleIndex defaultHiHat = 0;
+static SampleIndex defaultCrash = 0;
+static SampleIndex defaultTom = 0;
+static SampleIndex defaultRide = 0;
+static SampleIndex defaultOpHat = 0;
+
 // Initializes the application data and return a vector of samples
 std::vector<Mix_Chunk*> InitAndLoad(std::vector<SampleIndex>& kicks,
     std::vector<SampleIndex>& snares, std::vector<SampleIndex>& hihats,
     std::vector<SampleIndex>& crashes, std::vector<SampleIndex>& toms,
-    std::vector<SampleIndex>& rides)
+    std::vector<SampleIndex>& rides, std::vector<SampleIndex>& ophats)
 {
+
     // Set up the audio stream
     int result = Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 512);
     if (result < 0) {
@@ -93,7 +103,7 @@ std::vector<Mix_Chunk*> InitAndLoad(std::vector<SampleIndex>& kicks,
 
     // Find and load all wav files
     std::cout << "Loading ";
-    auto sampleIndex = 0;
+    SampleIndex sampleIndex = 0;
     for (auto filename : findFiles(".", ".wav")) {
         if (contains(filename, "bpm"s) || contains(filename, "loop"s)) {
             // Skip samples that are loops or drum loops
@@ -106,6 +116,37 @@ std::vector<Mix_Chunk*> InitAndLoad(std::vector<SampleIndex>& kicks,
         if (sample == nullptr) {
             fprintf(stderr, "\nCould not load %s\n", filename.c_str());
             continue;
+        }
+
+        auto foundSpecific = false;
+        if (iContains(filename, "cycdh_eleck01-kick02")) {
+            // std::cout << "FOUND KICK " << filename << ", " << sampleIndex << std::endl;
+            defaultKick = sampleIndex;
+            foundSpecific = true;
+        } else if (iContains(filename, "acoustic snare-02")) {
+            // std::cout << "FOUND SNARE " << filename << ", " << sampleIndex << std::endl;
+            defaultSnare = sampleIndex;
+            foundSpecific = true;
+        } else if (iContains(filename, "cycdh_sab_clhat-10")) {
+            // std::cout << "FOUND HIHAT " << filename << ", " << sampleIndex << std::endl;
+            defaultHiHat = sampleIndex;
+            foundSpecific = true;
+        } else if (iContains(filename, "cycdh_trashe-01")) {
+            // std::cout << "FOUND CRASH " << filename << ", " << sampleIndex << std::endl;
+            defaultCrash = sampleIndex;
+            foundSpecific = true;
+        } else if (iContains(filename, "cycdh_k3tom-01")) {
+            // std::cout << "FOUND TOM " << filename << ", " << sampleIndex << std::endl;
+            defaultTom = sampleIndex;
+            foundSpecific = true;
+        } else if (iContains(filename, "cycdh_eleck01-cymbal")) {
+            // std::cout << "FOUND RIDE " << filename << ", " << sampleIndex << std::endl;
+            defaultRide = sampleIndex;
+            foundSpecific = true;
+        } else if (iContains(filename, "cycdh_k3ophat-01")) {
+            // std::cout << "FOUND OPHAT " << filename << ", " << sampleIndex << std::endl;
+            defaultOpHat = sampleIndex;
+            foundSpecific = true;
         }
 
         auto foundCategory = true;
@@ -126,12 +167,14 @@ std::vector<Mix_Chunk*> InitAndLoad(std::vector<SampleIndex>& kicks,
             toms.push_back(sampleIndex);
         } else if (iContains(filename, "ride")) {
             rides.push_back(sampleIndex);
+        } else if (iContains(filename, "ophat")) {
+            ophats.push_back(sampleIndex);
         } else {
             foundCategory = false;
             // printf("WOOT? %s\n", filename.c_str());
         }
 
-        if (foundCategory) {
+        if (foundCategory || foundSpecific) {
             // Only keep the samples that fit one of the above categories
             samples.push_back(sample);
             sampleIndex++;
@@ -139,18 +182,24 @@ std::vector<Mix_Chunk*> InitAndLoad(std::vector<SampleIndex>& kicks,
     }
     std::cout << std::endl;
 
+    auto w = ""s;
     if (kicks.size() == 0) {
-        std::cerr << "Found no kicks!" << std::endl;
+        w = "kick";
     } else if (snares.empty()) {
-        std::cerr << "Found no snares!" << std::endl;
+        w = "snare";
     } else if (hihats.empty()) {
-        std::cerr << "Found no hihats!" << std::endl;
+        w = "hihat";
     } else if (crashes.empty()) {
-        std::cerr << "Found no crashes!" << std::endl;
+        w = "crash";
     } else if (crashes.empty()) {
-        std::cerr << "Found no toms!" << std::endl;
+        w = "tom";
     } else if (rides.empty()) {
-        std::cerr << "Found no rides!" << std::endl;
+        w = "ride";
+    } else if (ophats.empty()) {
+        w = "ophat";
+    }
+    if (!w.empty()) {
+        std::cerr << "Found no " << w << "s!" << std::endl;
     }
 
     return samples;
@@ -208,22 +257,18 @@ int main(int argc, char** argv)
     }
     SDL_FreeSurface(bmp);
 
-    std::vector<SampleIndex> kicks;
-    std::vector<SampleIndex> snares;
-    std::vector<SampleIndex> hihats;
-    std::vector<SampleIndex> crashes;
-    std::vector<SampleIndex> toms;
-    std::vector<SampleIndex> rides;
+    std::vector<SampleIndex> kicks, snares, hihats, crashes, toms, rides, ophats;
 
     // Application specific Initialize of data structures
-    auto samples = InitAndLoad(kicks, snares, hihats, crashes, toms, rides);
+    auto samples = InitAndLoad(kicks, snares, hihats, crashes, toms, rides, ophats);
 
-    SampleIndex currentKick = kicks[0];
-    SampleIndex currentSnare = snares[0];
-    SampleIndex currentHiHat = hihats[0];
-    SampleIndex currentCrash = crashes[0];
-    SampleIndex currentTom = toms[0];
-    SampleIndex currentRide = rides[0];
+    SampleIndex currentKick = defaultKick; // kicks[0]
+    SampleIndex currentSnare = defaultSnare; // snares[0];
+    SampleIndex currentHiHat = defaultHiHat; // hihats[0]
+    SampleIndex currentCrash = defaultCrash; // crashes[0]
+    SampleIndex currentTom = defaultTom; // toms[0]
+    SampleIndex currentRide = defaultRide; // rides[0]
+    SampleIndex currentOpHat = defaultOpHat; // ophats[0]
 
     // Event descriptor
     SDL_Event Event;
@@ -241,15 +286,16 @@ int main(int argc, char** argv)
         int volume = 128;
 
         std::vector<int> usedChannels;
-        int freeChannel = -1;
-        int i;
+        int i, freeChannel = -1;
 
         while (!done && gotEvent) {
             switch (Event.type) {
             case SDL_KEYDOWN:
                 switch (Event.key.keysym.sym) {
                 case 'a': // kick
-                    Mix_PlayChannel(-1, samples[currentKick], 0);
+                    i = Mix_GroupAvailable(-1);
+                    Mix_Volume(i, 128);
+                    Mix_PlayChannel(i, samples[currentKick], 0);
                     break;
                 case 'p': // special snare
                     // TODO: Don't play the sample repeatedly,
@@ -278,6 +324,7 @@ int main(int argc, char** argv)
                 case 'd': // crash
                     i = Mix_GroupAvailable(-1);
                     Mix_Volume(i, 128);
+
                     Mix_PlayChannel(i, samples[currentCrash], 0);
                     break;
                 case 's': // hi-hat
@@ -295,6 +342,15 @@ int main(int argc, char** argv)
                     Mix_Volume(i, 128);
                     Mix_PlayChannel(i, samples[currentRide], 0);
                     break;
+                case 'x': // ophat
+                    i = Mix_GroupAvailable(-1);
+                    Mix_Volume(i, 128);
+                    Mix_PlayChannel(i, samples[currentOpHat], 0);
+                    break;
+                case 'i': // output sample indexes
+                    std::cerr << "k " << currentKick << " s " << currentSnare << " hh "
+                              << currentHiHat << " c " << currentCrash << " t " << currentTom
+                              << " r " << currentRide << " oh " << currentOpHat << std::endl;
                 case 'f': // randomize samples
                     currentKick = *select_randomly(kicks.begin(), kicks.end());
                     currentSnare = *select_randomly(snares.begin(), snares.end());
@@ -302,6 +358,7 @@ int main(int argc, char** argv)
                     currentCrash = *select_randomly(crashes.begin(), crashes.end());
                     currentTom = *select_randomly(toms.begin(), toms.end());
                     currentRide = *select_randomly(rides.begin(), rides.end());
+                    currentOpHat = *select_randomly(ophats.begin(), ophats.end());
                     break;
                 case SDLK_ESCAPE: // quit
                     done = true;
