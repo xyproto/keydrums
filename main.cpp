@@ -2,6 +2,7 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <iterator>
@@ -26,7 +27,8 @@ Iter select_randomly(Iter start, Iter end, RandomGenerator& g)
 }
 
 // thanks https://stackoverflow.com/a/16421677/131264
-template <typename Iter> Iter select_randomly(Iter start, Iter end)
+template <typename Iter>
+Iter select_randomly(Iter start, Iter end)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
